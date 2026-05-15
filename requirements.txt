@@ -1,0 +1,25 @@
+# Core Dependencies
+numpy>=1.24.0
+pandas>=2.0.0
+psutil>=5.9.0
+
+# Machine Learning & AI
+scikit-learn>=1.2.0
+joblib>=1.3.0
+torch>=2.0.0
+sentence-transformers>=2.2.0
+
+# LLM & RAG
+langchain>=0.0.300
+chromadb>=0.4.0
+
+# Database & API
+sqlite3-binary  # If needed, though sqlite3 is built-in
+fastapi>=0.100.0
+uvicorn>=0.22.0
+
+# Development
+ipykernel
+pytest
+black
+flake8

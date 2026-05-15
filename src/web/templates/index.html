@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Server Health Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a855f7;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --critical: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prediction-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
+        }
+
+        .prediction-status {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .status-healthy { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+        .status-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .status-critical { background: rgba(239, 68, 68, 0.1); color: var(--critical); }
+
+        .ai-assistant-section {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .assistant-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .assistant-input-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            color: white;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        button {
+            background: var(--accent-blue);
+            color: var(--bg-dark);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .assistant-results {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem;
+            min-height: 100px;
+        }
+
+        .result-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .chart-container {
+            margin-top: 2rem;
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--accent-blue);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease;
+            opacity: 0.6;
+        }
+
+        .bar:hover {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">HEALTH MONITOR AI</div>
+            <div class="status-badge">
+                <div class="pulse"></div>
+                LIVE SYSTEM MONITORING
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- CPU Metric -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">CPU Utilization</div>
+                </div>
+                <div class="metric-value" id="cpu-val">0.0<span class="metric-unit">%</span></div>
+                <div class="chart-container" id="cpu-chart">
+                    <!-- Bars generated by JS -->
+                </div>
+            </div>
+
+            <!-- RAM Metric -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Memory Usage</div>
+                </div>
+                <div class="metric-value" id="ram-val">0.0<span class="metric-unit">%</span></div>
+                <div class="chart-container" id="ram-chart">
+                    <!-- Bars generated by JS -->
+                </div>
+            </div>
+
+            <!-- AI Prediction -->
+            <div class="card prediction-card">
+                <div class="card-header">
+                    <div class="card-title">AI Forecast (Next Value)</div>
+                </div>
+                <div class="metric-value" id="pred-val">--<span class="metric-unit">%</span></div>
+                <div id="risk-status" class="prediction-status">Analyzing...</div>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary);" id="failure-prob">
+                    Failure Probability: 0%
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-assistant-section">
+            <div class="assistant-header">
+                <h3>🛡️ DevOps RAG Assistant</h3>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Query historical incidents and infrastructure documentation.</p>
+            <div class="assistant-input-group">
+                <input type="text" id="assistant-input" placeholder="e.g., memory leak incidents in Redis">
+                <button onclick="queryAssistant()">Analyze</button>
+            </div>
+            <div class="assistant-results" id="assistant-results">
+                <div style="color: var(--text-secondary); text-align: center; margin-top: 2rem;">No active queries.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function updateDashboard() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+
+                // Update Values
+                document.getElementById('cpu-val').innerHTML = `${data.current_metrics.cpu_usage.toFixed(1)}<span class="metric-unit">%</span>`;
+                document.getElementById('ram-val').innerHTML = `${data.current_metrics.ram_usage.toFixed(1)}<span class="metric-unit">%</span>`;
+                
+                if (data.ai_prediction.next_cpu) {
+                    document.getElementById('pred-val').innerHTML = `${data.ai_prediction.next_cpu.toFixed(1)}<span class="metric-unit">%</span>`;
+                }
+
+                // Update Status
+                const statusEl = document.getElementById('risk-status');
+                const probEl = document.getElementById('failure-prob');
+                if (data.ai_prediction.status) {
+                    const status = data.ai_prediction.status;
+                    statusEl.innerText = status.severity;
+                    statusEl.className = 'prediction-status ' + (status.severity.includes('CRITICAL') ? 'status-critical' : status.severity.includes('WARNING') ? 'status-warning' : 'status-healthy');
+                    probEl.innerText = `Failure Probability: ${status.failure_probability}`;
+                }
+
+                // Update Charts (simple mock for demo)
+                updateChart('cpu-chart', data.current_metrics.cpu_usage);
+                updateChart('ram-chart', data.current_metrics.ram_usage);
+
+            } catch (error) {
+                console.error('Failed to fetch metrics:', error);
+            }
+        }
+
+        function updateChart(containerId, value) {
+            const container = document.getElementById(containerId);
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = `${value}%`;
+            container.appendChild(bar);
+            if (container.children.length > 30) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        async function queryAssistant() {
+            const input = document.getElementById('assistant-input');
+            const resultsContainer = document.getElementById('assistant-results');
+            const text = input.value;
+            
+            if (!text) return;
+
+            resultsContainer.innerHTML = '<div style="color: var(--accent-blue);">Searching knowledge base...</div>';
+
+            try {
+                const response = await fetch('/assistant/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const data = await response.json();
+                
+                resultsContainer.innerHTML = '';
+                data.results.forEach(res => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.innerText = res;
+                    resultsContainer.appendChild(div);
+                });
+            } catch (error) {
+                resultsContainer.innerHTML = '<div style="color: var(--critical);">Error querying assistant.</div>';
+            }
+        }
+
+        // Initial update and interval
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
+    </script>
+</body>
+</html>
